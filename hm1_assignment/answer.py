@@ -67,7 +67,7 @@ def value_iteration(ps, rewards, gamma=1):
             old_utilities = deepcopy(new_utilities)
             new_utilities[i] = reward + gamma * update_util
 
-            if (all((((abs(old_util - new_util) < .0000001) and (update_util != 0))) for old_util, new_util in zip(old_utilities, new_utilities))):
+            if (all((((abs(old_util - new_util) < 1e-31) and (update_util != 0))) for old_util, new_util in zip(old_utilities, new_utilities))):
                 U = new_utilities
                 return U
 
