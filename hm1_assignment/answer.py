@@ -25,6 +25,7 @@ def main():
 
 import world_gen, episode_sim, policy_print
 import numpy as np
+from copy import deepcopy
 
 ps = world_gen.gen_transitions()
 ## ps[0][i, j] is the probability of moving to j when trying to move up from state i
@@ -45,8 +46,30 @@ def value_iteration(ps, rewards, gamma=1):
     return U
     
     note: iterate until the bellman update ceases to change the values of U"""
-    raise NotImplementedError
-    return U
+    state_indices = range(rewards.shape[0])
+
+    U = np.zeros(rewards.shape[0])
+    new_utilities = np.zeros(rewards.shape[0])
+    old_utilities = np.zeros(rewards.shape[0])
+    while True:
+        for i in range(rewards.shape[0]):
+            reward = rewards[i]
+
+            # calculate the best action
+            # (state utility * probability) for all states resulting from performing the action from the current state
+            up_value = np.sum([ps[0][i, j] * new_utilities[j] for j in state_indices])
+            right_value = np.sum([ps[1][i, j] * new_utilities[j] for j in state_indices])
+            down_value = np.sum([ps[2][i, j] * new_utilities[j] for j in state_indices])
+            left_value = np.sum([ps[3][i, j] * new_utilities[j] for j in state_indices])
+
+            update_util = np.max([up_value, right_value, down_value, left_value])
+
+            old_utilities = deepcopy(new_utilities)
+            new_utilities[i] = reward + gamma * update_util
+
+            if (all((((abs(old_util - new_util) < .0000001) and (update_util != 0))) for old_util, new_util in zip(old_utilities, new_utilities))):
+                U = new_utilities
+                return U
 
 def best_policy(ps, U):
     """takes the current transition probabilities, and the estimates of utility for each state
@@ -78,8 +101,7 @@ def policy_iteration(ps, rewards, start_pol, gamma=1):
 @handle('1')
 def Q1():
     ## hint try running value iteration on different values of beta
-    ## can you tell by the optimal policies if you probably skipped a beta with a different optimal policy?
-    raise NotImplementedError    
+    ## can you tell by the optimal policies if you probably skipped a beta with a different optimal policy?  
     for beta in (-0.04,):
     ## add a full list of represenative betas each with a different optimal policy, and be sure to get all the different policies, (for beta < 0.)
     ## ensure your betas are in descending order, from least negative to most negative
