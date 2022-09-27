@@ -52,20 +52,20 @@ def value_iteration(ps, rewards, gamma=1):
     new_utilities = np.zeros(rewards.shape[0])
     old_utilities = np.zeros(rewards.shape[0])
     while True:
-        for i in range(rewards.shape[0]):
-            reward = rewards[i]
+        for curr_state in range(rewards.shape[0]):
+            reward = rewards[curr_state]
 
             # calculate the best action
             # (state utility * probability) for all states resulting from performing the action from the current state
-            up_value = np.sum([ps[0][i, j] * new_utilities[j] for j in state_indices])
-            right_value = np.sum([ps[1][i, j] * new_utilities[j] for j in state_indices])
-            down_value = np.sum([ps[2][i, j] * new_utilities[j] for j in state_indices])
-            left_value = np.sum([ps[3][i, j] * new_utilities[j] for j in state_indices])
+            up_value = np.sum([ps[0][curr_state, new_state] * new_utilities[new_state] for new_state in state_indices])
+            right_value = np.sum([ps[1][curr_state, new_state] * new_utilities[new_state] for new_state in state_indices])
+            down_value = np.sum([ps[2][curr_state, new_state] * new_utilities[new_state] for new_state in state_indices])
+            left_value = np.sum([ps[3][curr_state, new_state] * new_utilities[new_state] for new_state in state_indices])
 
             update_util = np.max([up_value, right_value, down_value, left_value])
 
             old_utilities = deepcopy(new_utilities)
-            new_utilities[i] = reward + gamma * update_util
+            new_utilities[curr_state] = reward + (gamma * update_util)
 
             if (all((((abs(old_util - new_util) < 1e-31) and (update_util != 0))) for old_util, new_util in zip(old_utilities, new_utilities))):
                 U = new_utilities
@@ -79,20 +79,20 @@ def best_policy(ps, U):
     state_indices = range(rewards.shape[0])
     policy = np.zeros(rewards.shape[0], dtype = np.int64)
 
-    for curr_state_index in state_indices:
-        up_utility = np.sum([ps[0][curr_state_index, j] * U[j] for j in state_indices])
-        right_utility = np.sum([ps[1][curr_state_index, j] * U[j] for j in state_indices])
-        down_utility = np.sum([ps[2][curr_state_index, j] * U[j] for j in state_indices])
-        left_utility = np.sum([ps[3][curr_state_index, j] * U[j] for j in state_indices])
+    for curr_state in state_indices:
+        up_utility = np.sum([ps[0][curr_state, new_state] * U[new_state] for new_state in state_indices])
+        right_utility = np.sum([ps[1][curr_state, j] * U[j] for j in state_indices])
+        down_utility = np.sum([ps[2][curr_state, j] * U[j] for j in state_indices])
+        left_utility = np.sum([ps[3][curr_state, j] * U[j] for j in state_indices])
         action_utilities = [up_utility, right_utility, down_utility, left_utility]
         if up_utility == np.max(action_utilities):
-            policy[curr_state_index] = 0
+            policy[curr_state] = 0
         elif right_utility == np.max(action_utilities):
-            policy[curr_state_index] = 1
+            policy[curr_state] = 1
         elif down_utility == np.max(action_utilities):
-            policy[curr_state_index] = 2
+            policy[curr_state] = 2
         elif left_utility == np.max(action_utilities):
-            policy[curr_state_index] = 3
+            policy[curr_state] = 3
 
     return policy
     
@@ -102,30 +102,104 @@ def policy_eval(ps, rewards, policy, gamma=1):
     return the estimated Us
     
     note: iterate until the bellman update ceases to change the values of U"""
-    raise NotImplimentedError
-    return Us
+    state_indices = range(rewards.shape[0])
+
+    U = np.zeros(rewards.shape[0])
+    new_state = np.zeros(rewards.shape[0])
+    old_utilities = np.zeros(rewards.shape[0])
+    while True:
+        for curr_state in range(rewards.shape[0]):
+            reward = rewards[curr_state]
+
+            # calculate the best action
+            # (state utility * probability) for all states resulting from performing the action from the current state
+            up_value = np.sum([ps[0][curr_state, j] * new_state[j] for j in state_indices])
+            right_value = np.sum([ps[1][curr_state, j] * new_state[j] for j in state_indices])
+            down_value = np.sum([ps[2][curr_state, j] * new_state[j] for j in state_indices])
+            left_value = np.sum([ps[3][curr_state, j] * new_state[j] for j in state_indices])
+
+            # give values weights according to the policy
+            up_value_weighted = up_value * policy[0][curr_state]
+            right_value_weighted  = right_value * policy[1][curr_state]
+            down_value_weighted  = down_value * policy[2][curr_state]
+            left_value_weighted  = left_value * policy[3][curr_state]
+            
+            update_util = np.sum([up_value_weighted, right_value_weighted, down_value_weighted, left_value_weighted])
+
+            old_utilities = deepcopy(new_state)
+            new_state[curr_state] = reward + (gamma * update_util)
+
+            if (all((((abs(old_util - new_util) < 1e-31) and (update_util != 0))) for old_util, new_util in zip(old_utilities, new_state))):
+                Us = new_state
+                return Us
 
 
 def policy_iteration(ps, rewards, start_pol, gamma=1):
     """Perform policy iteration, takes the transition probability, the rewards and gamma and the initial policy
     
     return a sequence of policies calculated by policy iteration"""
-    pols = [start_pol,]
-    raise NotImplementedError
-    ## policy iteration
+    #pols = [start_pol,]
+    pols = []
+    state_indices = range(rewards.shape[0])
+
+    U = np.zeros(rewards.shape[0])
+
+    policy = start_pol
+    while True:
+        policy_changed = False
+        U = policy_eval(ps, rewards, policy, gamma)
+        for curr_state in range(rewards.shape[0]):
+
+            # calculate the best action
+            # (state utility * probability) for all states resulting from performing the action from the current state
+            up_value = np.sum([ps[0][curr_state, new_state] * U[new_state] for new_state in state_indices])
+            right_value = np.sum([ps[1][curr_state, new_state] * U[new_state] for new_state in state_indices])
+            down_value = np.sum([ps[2][curr_state, new_state] * U[new_state] for new_state in state_indices])
+            left_value = np.sum([ps[3][curr_state, new_state] * U[new_state] for new_state in state_indices])
+
+            update_util = np.max([up_value, right_value, down_value, left_value])
+            update_move = np.argmax([up_value, right_value, down_value, left_value])
+
+            # assumes that policy is non-stochastic
+            current_mov_index = np.argmax(policy, axis=0)[curr_state]
+            if current_mov_index == 0:
+                curr_mov_value = up_value
+            elif current_mov_index == 1:
+                curr_mov_value = right_value
+            elif current_mov_index == 2:
+                curr_mov_value = down_value 
+            else: # current_mov_index == 3
+                curr_mov_value = left_value  
+
+
+            if update_util > curr_mov_value:
+                old_pol = deepcopy(policy)
+                pols.append(old_pol)
+                policy[update_move][curr_state] = 1
+                move_indices = [move for move in range(4) if move != update_move]
+                for mov_index in move_indices:
+                    policy[mov_index][curr_state] = 0
+                policy_changed = True
+
+            if not policy_changed:
+                pols.append(policy)
+                return pols
+    
     return pols
 
 @handle('1')
 def Q1():
     ## hint try running value iteration on different values of beta
     ## can you tell by the optimal policies if you probably skipped a beta with a different optimal policy?  
-    for beta in (-0.04,):
+    for beta in (-.025, -.029, -.050, -.100, -.500, -.900, -1.60, -1.70):
     ## add a full list of represenative betas each with a different optimal policy, and be sure to get all the different policies, (for beta < 0.)
     ## ensure your betas are in descending order, from least negative to most negative
         rewards = world_gen.gen_rewards(beta)
         U = value_iteration(ps, rewards, gamma=1)
         print(f"$\\pi_{{\\beta={beta}}}^*=$")
         policy = best_policy(ps, U)
+        # TODO: delete line below
+        #policy_print.print_policy(policy)
         policy_print.latex_policy(policy)
         
 @handle('1.1')
@@ -144,7 +218,6 @@ def Q2():
     policy += 1/4
     U = policy_eval(ps, rewards, policy, gamma=1)
     policy_print.latex_grid(U.reshape(h, w))
-    raise NotImplementedError
 
 @handle('3')
 def Q3():
