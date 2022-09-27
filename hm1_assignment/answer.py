@@ -239,7 +239,6 @@ with open('episodes.json', 'r') as file:
 
 def MC_update(U, episode, gamma=1, alpha=0.01):
     """Performs the MC updates to U as associated with the provided episode"""
-    # TODO: incorrect for gamma != 1
     r_s, s_s, a_s = episode
     ep_length = len(r_s)
     state_returns = np.zeros(len(s_s))
@@ -287,7 +286,8 @@ def Q_learning_update(Q, episode, gamma=1, alpha=0.01):
             next_state_action = np.argmax([up_Q, right_Q, down_Q, left_Q])
             Q[state][action] = Q[state][action] + alpha * (reward + (gamma * Q[next_state][next_state_action]) - Q[state][action])
         else:
-            for action in range(4): # we can generalize for terminal states for faster convergeance
+            # we can generalize across actions for terminal states for faster convergeance
+            for action in range(4):
                 Q[state][action] = Q[state][action] + alpha * (reward - Q[state][action])
     return Q
 
