@@ -76,7 +76,24 @@ def best_policy(ps, U):
     
     return a list of the best action to take, by index (index in ps), in each state
     e.g. [0, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 0] is the policy for beta = -0.04"""
-    raise NotImplementedError
+    state_indices = range(rewards.shape[0])
+    policy = np.zeros(rewards.shape[0], dtype = np.int64)
+
+    for curr_state_index in state_indices:
+        up_utility = np.sum([ps[0][curr_state_index, j] * U[j] for j in state_indices])
+        right_utility = np.sum([ps[1][curr_state_index, j] * U[j] for j in state_indices])
+        down_utility = np.sum([ps[2][curr_state_index, j] * U[j] for j in state_indices])
+        left_utility = np.sum([ps[3][curr_state_index, j] * U[j] for j in state_indices])
+        action_utilities = [up_utility, right_utility, down_utility, left_utility]
+        if up_utility == np.max(action_utilities):
+            policy[curr_state_index] = 0
+        elif right_utility == np.max(action_utilities):
+            policy[curr_state_index] = 1
+        elif down_utility == np.max(action_utilities):
+            policy[curr_state_index] = 2
+        elif left_utility == np.max(action_utilities):
+            policy[curr_state_index] = 3
+
     return policy
     
 def policy_eval(ps, rewards, policy, gamma=1):
