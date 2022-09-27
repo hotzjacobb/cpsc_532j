@@ -272,7 +272,23 @@ def TD_update(U, episode, gamma=1, alpha=0.01):
 def Q_learning_update(Q, episode, gamma=1, alpha=0.01):
     """Performs the Q learning updates to Q as associated with the provided episode"""
     r_s, s_s, a_s = episode
-    raise NotImplementedError
+    ep_length = len(r_s)
+
+    for timestep in range(ep_length):
+        terminal = timestep == len(r_s) - 1
+        state = s_s[timestep]
+        next_state = s_s[timestep + 1] if not terminal else None
+        reward = r_s[timestep]
+        action = np.argmax(Q[state]) # greedily chose the action from existing Q values
+        if not terminal:
+            up_Q = Q[next_state][0]
+            right_Q = Q[next_state][1]
+            down_Q = Q[next_state][2]
+            left_Q = Q[next_state][3]
+            next_state_action = np.argmax([up_Q, right_Q, down_Q, left_Q])
+            Q[state][action] = Q[state][action] + alpha * (reward + (gamma * Q[next_state][next_state_action]) - Q[state][action])
+        else:
+            Q[state][action] = Q[state][action] + alpha * (reward - Q[state][action])
     return Q
 
 @handle('4')  
