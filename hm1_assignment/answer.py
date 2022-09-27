@@ -199,8 +199,6 @@ def Q1():
         U = value_iteration(ps, rewards, gamma=1)
         print(f"$\\pi_{{\\beta={beta}}}^*=$")
         policy = best_policy(ps, U)
-        # TODO: delete line below
-        #policy_print.print_policy(policy)
         policy_print.latex_policy(policy)
         
 @handle('1.1')
@@ -241,6 +239,7 @@ with open('episodes.json', 'r') as file:
 
 def MC_update(U, episode, gamma=1, alpha=0.01):
     """Performs the MC updates to U as associated with the provided episode"""
+    # TODO: incorrect for gamma != 1
     r_s, s_s, a_s = episode
     ep_length = len(r_s)
     state_returns = np.zeros(len(s_s))
@@ -288,7 +287,8 @@ def Q_learning_update(Q, episode, gamma=1, alpha=0.01):
             next_state_action = np.argmax([up_Q, right_Q, down_Q, left_Q])
             Q[state][action] = Q[state][action] + alpha * (reward + (gamma * Q[next_state][next_state_action]) - Q[state][action])
         else:
-            Q[state][action] = Q[state][action] + alpha * (reward - Q[state][action])
+            for action in range(4): # we can generalize for terminal states for faster convergeance
+                Q[state][action] = Q[state][action] + alpha * (reward - Q[state][action])
     return Q
 
 @handle('4')  
@@ -309,7 +309,11 @@ def Q5():
 def Q6():
     ## check the orientation of your Q, I used this, but could do (4, 12)
     Q = np.zeros((h*w, 4)) 
+    ep_i = 0
     for ep in episodes:
+        ep_i += 1
+        if ep_i == 998:
+            print('debug')
         Q = Q_learning_update(Q, [ep['e_rewards'], ep['e_states'], ep['e_actions']])
     U = Q.max(axis=1)
     policy_print.latex_grid(U.reshape(h, w))
