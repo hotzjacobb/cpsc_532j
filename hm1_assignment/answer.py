@@ -26,6 +26,7 @@ def main():
 import world_gen, episode_sim, policy_print
 import numpy as np
 from copy import deepcopy
+from collections import defaultdict
 
 ps = world_gen.gen_transitions()
 ## ps[0][i, j] is the probability of moving to j when trying to move up from state i
@@ -104,7 +105,7 @@ def policy_eval(ps, rewards, policy, gamma=1):
     note: iterate until the bellman update ceases to change the values of U"""
     state_indices = range(rewards.shape[0])
 
-    U = np.zeros(rewards.shape[0])
+    Us = np.zeros(rewards.shape[0])
     new_state = np.zeros(rewards.shape[0])
     old_utilities = np.zeros(rewards.shape[0])
     while True:
@@ -241,7 +242,18 @@ with open('episodes.json', 'r') as file:
 def MC_update(U, episode, gamma=1, alpha=0.01):
     """Performs the MC updates to U as associated with the provided episode"""
     r_s, s_s, a_s = episode
-    raise NotImplementedError
+    ep_length = len(r_s)
+    state_returns = np.zeros(len(s_s))
+    state_specific_returns = defaultdict(list)
+    for timestep in reversed(range(ep_length)):
+        state_returns[timestep] = r_s[timestep] + r_s[timestep+1] if timestep != len(r_s) - 1 else r_s[timestep]
+    # for state in range(len(U)):
+    #     for i, state_return in enumerate(state_returns):
+    #         if s_s[i] == state:
+    #             state_specific_returns[i] += state_return
+    for i, state_return in enumerate(state_returns):
+        state = s_s[i]
+        U[state] = U[state] + gamma * (state_return - U[state])
     return U
 
 def TD_update(U, episode, gamma=1, alpha=0.01):
